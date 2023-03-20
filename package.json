@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "node-html-parser": "^6.1.5",
+    "puppeteer": "^19.7.5",
+    "svg2img": "^1.0.0-beta.2"
+  },
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^8.36.0"
+  }
+}
