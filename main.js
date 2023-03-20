@@ -1,8 +1,12 @@
 import puppeteer from "puppeteer";
-import svg2img from "svg2img";
-const linkToSheet = process.argv[2];
+import express from "express";
+import path from "path"
+import process from "process";
+const app = express()
+app.use("/js", express.static("assets"));
+app.use(express.json());
 
-(async () => {
+const extractImages = async (linkToSheet) => {
     const instance = await puppeteer.launch({ headless: true });
     const page = await instance.newPage();
 
@@ -27,24 +31,25 @@ const linkToSheet = process.argv[2];
             document.getElementById("jmuse-scroller-component").scrollBy(0, height);
         })
         await page.waitForSelector(`.EEnGW:nth-child(${i+1})`);
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 300));
         imgs[i] = await page.evaluate((i) => {
             return document.querySelector(`.EEnGW:nth-child(${i+1}) > img`).src
         }, i)
     }
+    await page.close();
+    await instance.close();
+    return imgs
+}
 
-    let normalizedImages = new Array(imgs.length);
-    imgs.forEach((img, index) => {
-        console.log(img);
-        let transformedImg = new URL(img);
-        console.log(transformedImg.href);
-        fetch(transformedImg, { method: "GET" })
-            .then((res) => {
-                normalizedImages[index] = res;
-            })
-            .catch((err) => {
-                console.error("err", err);
-            })
-    })
-    page.close();
-})();
+app.get("/", (req, res) => {
+    res.sendFile(path.join(process.cwd(), "index.html"));
+})
+
+app.post("/getSheets", async (req, res) => {
+    const result = await extractImages(req.body.link);
+    res.send(result);
+})
+
+app.listen(8080, () => {
+    console.log("server started");
+})
